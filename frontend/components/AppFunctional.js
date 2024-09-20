@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import axios from 'axios'
+import React, { useEffect, useState } from 'react'
 
 // önerilen başlangıç stateleri
 const initialMessage =""
@@ -12,16 +13,14 @@ export default function AppFunctional(props) {
   const [steps, setSteps] = useState(initialSteps)
   const [index, setIndex] = useState(initialIndex) 
 
-  const row = Math.floor(index / 3) + 1;
-  const column = (index % 3) + 1; 
-
   // AŞAĞIDAKİ HELPERLAR SADECE ÖNERİDİR.
   // Bunları silip kendi mantığınızla sıfırdan geliştirebilirsiniz.
 
   function getXY() {
+ 
     // Koordinatları izlemek için bir state e sahip olmak gerekli değildir.
     // Bunları hesaplayabilmek için "B" nin hangi indexte olduğunu bilmek yeterlidir.
-   const xy={row,column};
+   const xy={row:Math.floor(index / 3) + 1,column:(index % 3) + 1};
    return xy;
   }
 
@@ -29,8 +28,8 @@ export default function AppFunctional(props) {
     // Kullanıcı için "Koordinatlar (2, 2)" mesajını izlemek için bir state'in olması gerekli değildir.
     // Koordinatları almak için yukarıdaki "getXY" helperını ve ardından "getXYMesaj"ı kullanabilirsiniz.
     // tamamen oluşturulmuş stringi döndürür.
-    const koordinat=getXY();
-    return `Koordinatlar (${row},${column})`
+    const {row,column}=getXY();
+    return `Koordinatlar (${column}, ${row})`
   }
 
   function reset() {
@@ -42,26 +41,36 @@ export default function AppFunctional(props) {
   }
 
   function sonrakiIndex(yon) {
+    const {row,column}=getXY();
     // Bu helper bir yön ("sol", "yukarı", vb.) alır ve "B" nin bir sonraki indeksinin ne olduğunu hesaplar.
     // Gridin kenarına ulaşıldığında başka gidecek yer olmadığı için,
     // şu anki indeksi değiştirmemeli.
     if(yon==="up"&&row>1){
       return index-3
       
+    }else if(yon==="up"&&row<=1){
+      setMessage("Yukarıya gidemezsiniz")
     }
-    if(yon==="down"&&row<3){
+    else if(yon==="down"&&row<3){
       return index+3
+    }else if(yon==="down"&&row>=3){
+      setMessage("Aşağıya gidemezsiniz")
     }
-    if(yon==="left"&&column>1){
+    else if(yon==="left"&&column>1){
       return index-1
+    }else if(yon==="left"&&column<=1){
+      setMessage("Sola gidemezsiniz")
     }
-    if(yon==="right"&&column<3){
+    else if(yon==="right"&&column<3){
         return index+1
+    }else if(yon==="right"&&column>=3){
+        setMessage("Sağa gidemezsiniz")
       }
 return index;
   }
 
   function ilerle(evt) {
+
     // Bu event handler, "B" için yeni bir dizin elde etmek üzere yukarıdaki yardımcıyı kullanabilir,
     // ve buna göre state i değiştirir.
     const yon=evt.target.id;
@@ -70,8 +79,7 @@ return index;
       setIndex(gunceIndex);
       setSteps(prevsteps=>prevsteps+1);
       setMessage(initialMessage);
-    }else{
-      setMessage("Daha fazla ilerleyemezsiniz.")
+
     }
   }
 
@@ -81,14 +89,22 @@ return index;
   }
 
   function onSubmit(evt) {
+    const {row,column}=getXY();
     // payloadu POST etmek için bir submit handlera da ihtiyacınız var.
     evt.preventDefault();
-    const emailString = email.indexOf('@');
-    if(email===""){
-      setMessage("Ouch: email must be a valid email")
-    }else{
-      setMessage(email.slice(0, emailString))
-    }
+  
+ axios.post('http://localhost:9000/api/result', { "x": column, "y": row, "steps": steps, "email": email })
+    .then(function (response) {
+      console.log(response);
+      setMessage(response.data.message);
+
+    })
+    .catch(function (error) {
+      console.log(error);
+      console.log(error.response.message);
+      setMessage(error.response.data.message);
+    });
+    setEmail(initialEmail)
   }
 
   return (
@@ -118,7 +134,7 @@ return index;
         <button id="reset" onClick={reset}>reset</button>
       </div>
       <form onSubmit={onSubmit}>
-        <input id="email" type="email" placeholder="email girin" onChange={onChange}></input>
+        <input id="email" type="email" placeholder="email girin" onChange={onChange} value={email}></input>
         <input id="submit" type="submit"></input>
       </form>
     </div>
