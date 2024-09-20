@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 
 // önerilen başlangıç stateleri
-const initialMessage =null
-const initialEmail = null
+const initialMessage =""
+const initialEmail = ""
 const initialSteps = 0
-const initialIndex = 0 //  "B" nin bulunduğu indexi
+const initialIndex = 4 //  "B" nin bulunduğu indexi
 
 export default function AppFunctional(props) {
   const [message, setMessage] = useState(initialMessage)
@@ -83,15 +83,18 @@ return index;
   function onSubmit(evt) {
     // payloadu POST etmek için bir submit handlera da ihtiyacınız var.
     evt.preventDefault();
-    if(!email){
-      setMessage("Email gereklidir.")
+    const emailString = email.indexOf('@');
+    if(email===""){
+      setMessage("Ouch: email must be a valid email")
+    }else{
+      setMessage(email.slice(0, emailString))
     }
   }
 
   return (
     <div id="wrapper" className={props.className}>
       <div className="info">
-        <h3 id="coordinates" >{getXYMesaj()}</h3>
+        <h3 id="coordinates" data-testid="coordinates">{getXYMesaj()}</h3>
         <h3 id="steps">{steps} kere ilerlediniz</h3>
       </div>
       <div id="grid">
